@@ -49,7 +49,8 @@ public class MySQLDatabaseMeta extends BaseDatabaseMeta implements DatabaseInter
 
   private static final Set<String>
     SHORT_MESSAGE_EXCEPTIONS =
-    Sets.newHashSet( "com.mysql.jdbc.PacketTooBigException", "com.mysql.jdbc.MysqlDataTruncation" );
+    Sets.newHashSet( "com.mysql.cj.jdbc.exceptions.PacketTooBigException",
+      "com.mysql.cj.jdbc.exceptions.MysqlDataTruncation" );
 
   @Override public int[] getAccessTypeList() {
     return new int[] { DatabaseMeta.TYPE_ACCESS_NATIVE, DatabaseMeta.TYPE_ACCESS_ODBC, DatabaseMeta.TYPE_ACCESS_JNDI };
@@ -103,7 +104,7 @@ public class MySQLDatabaseMeta extends BaseDatabaseMeta implements DatabaseInter
     if ( getAccessType() == DatabaseMeta.TYPE_ACCESS_ODBC ) {
       return "sun.jdbc.odbc.JdbcOdbcDriver";
     } else {
-      return "org.gjt.mm.mysql.Driver";
+      return "com.mysql.cj.jdbc.Driver";
     }
   }
 

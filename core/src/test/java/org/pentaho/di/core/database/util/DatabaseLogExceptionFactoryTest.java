@@ -22,8 +22,8 @@
 
 package org.pentaho.di.core.database.util;
 
-import com.mysql.jdbc.MysqlDataTruncation;
-import com.mysql.jdbc.PacketTooBigException;
+import com.mysql.cj.jdbc.exceptions.MysqlDataTruncation;
+import com.mysql.cj.jdbc.exceptions.PacketTooBigException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
