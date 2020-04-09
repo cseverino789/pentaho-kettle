@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2002-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2002-2020 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -32,11 +32,16 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith( PowerMockRunner.class )
 public class LoggingRegistryTest {
@@ -145,6 +150,56 @@ public class LoggingRegistryTest {
     Whitebox.setInternalState( loggingRegistry, "childrenMap", getDummyChildrenMap() );
 
     assertNull( loggingRegistry.getLogChannelFileWriterBuffer( "dcffc35f-c74f-4e37-b463-97313998ea20" ) );
+  }
+
+  @Test
+  public void testPurgeTimer() throws InterruptedException {
+
+    LoggingRegistry loggingRegistry = LoggingRegistry.getInstance();
+    loggingRegistry.setMaxSize( 10 );
+    loggingRegistry.setPurgeTimeout( 500 );
+
+    loggingRegistry.reset();
+    populateLoggingRegistry( 20, loggingRegistry, true );
+
+    Thread.sleep( 1100 );
+
+    assertThat( loggingRegistry.getRegistryMapSize(), lessThan( 10 ) );
+  }
+
+  @Test
+  public void testDump() {
+    LoggingRegistry loggingRegistry = LoggingRegistry.getInstance();
+    loggingRegistry.reset();
+
+    LoggingObjectInterface obj = new SimpleLoggingObject( UUID.randomUUID().toString(),  LoggingObjectType.JOB, null );
+    String id = loggingRegistry.registerLoggingSource( obj );
+
+    String output = loggingRegistry.dump( false );
+    assertFalse( output.isEmpty() );
+    assertTrue( output.contains( id ) );
+  }
+
+  @Test
+  public void testModificationTime() {
+    LoggingRegistry loggingRegistry = LoggingRegistry.getInstance();
+    loggingRegistry.reset();
+
+    LoggingObjectInterface obj = new SimpleLoggingObject( UUID.randomUUID().toString(),  LoggingObjectType.JOB, null );
+    String id = loggingRegistry.registerLoggingSource( obj );
+
+    // Verify that lastModTime is the same as the last registered logchannel.
+    assertEquals( loggingRegistry.getLastModificationTime(),
+      loggingRegistry.getLoggingObject( id ).getRegistrationDate() );
+  }
+
+  private void populateLoggingRegistry( int parentCount, LoggingRegistry registry, boolean isPurgeable ) {
+
+    for ( int i = 0; i < parentCount; i++ ) {
+      LoggingObjectInterface obj = new SimpleLoggingObject( UUID.randomUUID().toString(),  LoggingObjectType.JOB, null );
+      registry.registerLoggingSource( obj, isPurgeable );
+
+    }
   }
 
   private Map<String, LogChannelFileWriterBuffer> getDummyFileWriterBuffers() {
