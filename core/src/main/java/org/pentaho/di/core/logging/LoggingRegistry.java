@@ -142,6 +142,7 @@ public class LoggingRegistry {
     if ( found != null ) {
       String foundLogChannelId = determineExistingLoggingSource( loggingSource, found );
       if ( !foundLogChannelId.isEmpty() ) {
+        foundCounter++;
         return foundLogChannelId;
       }
     }
@@ -159,7 +160,7 @@ public class LoggingRegistry {
         String parentLogChannelId = loggingSource.getParent().getLogChannelId();
         if ( parentLogChannelId != null ) {
           List<String> parentChildren =
-            this.childrenMap.computeIfAbsent( parentLogChannelId, k -> new ArrayList<String>() );
+            this.childrenMap.computeIfAbsent( parentLogChannelId, k -> new ArrayList<>() );
           parentChildren.add( logChannelId );
         }
       }
@@ -530,7 +531,7 @@ public class LoggingRegistry {
 
   /**
    * Helper method that purges the single object
-   * @param channelsNotToRemove
+   * @param channelsNotToRemove  Set of LogChannelIds not remove.
    * @return boolean true if object was removed.
    */
   private boolean purgeObject( Set<String> channelsNotToRemove ) {
@@ -595,11 +596,10 @@ public class LoggingRegistry {
     }
 
     final AtomicBoolean busy = new AtomicBoolean( false );
+
     TimerTask timerTask = new TimerTask() {
       public void run() {
-        if ( !busy.get() ) {
-          busy.set( true );
-
+        if ( busy.compareAndSet( false, true ) ) {
           try {
             purgeRegistry();
             purgeTimerCount++;
@@ -612,6 +612,25 @@ public class LoggingRegistry {
     };
     purgeTimer.schedule( timerTask, purgeTimeout, purgeTimeout );
   }
+
+  /**
+   * For junit testing purposes
+   * @return purgedObjectCount
+   */
+  @VisibleForTesting
+  int getPurgedObjectCount( ) {
+    return purgedObjectCount;
+  }
+
+  /**
+   * For junit testing purposes
+   * @return boolean (wrapper for contain)
+   */
+  @VisibleForTesting
+  boolean purgeQueueContains( Object obj ) {
+    return registerPurgeQueue.contains( obj );
+  }
+
 
   /**
    * For junit testing purposes
@@ -629,5 +648,13 @@ public class LoggingRegistry {
   @VisibleForTesting
   Map<String, List<String>> dumpChildren() {
     return Collections.unmodifiableMap( this.childrenMap );
+  }
+
+  /**
+   * Allows for testing purge logic without the timer.
+   */
+  @VisibleForTesting
+  void invokePurge( ) {
+    purgeRegistry();
   }
 }

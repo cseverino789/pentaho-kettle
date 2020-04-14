@@ -146,8 +146,7 @@ public class CarteSingleton {
       final AtomicBoolean busy = new AtomicBoolean( false );
       TimerTask timerTask = new TimerTask() {
         public void run() {
-          if ( !busy.get() ) {
-            busy.set( true );
+          if ( busy.compareAndSet( false, true ) ) {
 
             try {
               // Check all transformations...
